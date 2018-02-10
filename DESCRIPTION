@@ -1,0 +1,12 @@
+Package: USSpensions
+Title: Calculate pensions under alternative schemes for USS
+Version: 0.0.0.9000
+Authors@R: c(
+	person("Gibran", "Hemani", email = "g.hemani@bristol.ac.uk", role = c("aut", "cre")),
+	person("Neil", "Davies", email = "neil.davies@bristol.ac.uk", role = c("aut")))
+Description: Calculate pensions under alternative schemes for USS
+Depends: R (>= 3.4.2), dplyr, lubridate
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
