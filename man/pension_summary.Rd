@@ -11,6 +11,9 @@ pension_summary(benefits, dob)
 
 \item{dob}{e.g. "06/09/1984" for 6 september 1984}
 }
+\value{
+relevant row from output of \code{pension_calculation}
+}
 \description{
 Calculate various differences
 }

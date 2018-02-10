@@ -24,7 +24,5 @@ benefits <- pension_calculation(
 	employer_cont=0.1325, 
 	prudence = 67, 
 	fund = "USS"
-)
-
-pension_summary(benefits, "06/09/1984")
+) %>% pension_summary("1984-09-06")
 

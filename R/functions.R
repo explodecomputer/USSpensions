@@ -199,7 +199,7 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 #' @return date object
 retirement_date <- function(dob)
 {
-	lubridate::dmy(dob) + lubridate::years(68)
+	lubridate::ymd(dob) + lubridate::years(68)
 }
 
 #' Pension summary
@@ -208,6 +208,9 @@ retirement_date <- function(dob)
 #' 
 #' @param benefits Output from \code{pension_calculation}
 #' @param dob e.g. "06/09/1984" for 6 september 1984
+#' 
+#' @export
+#' @return relevant row from output of \code{pension_calculation}
 pension_summary <- function(benefits, dob)
 {
 	subset(benefits, year == lubridate::year(retirement_date(dob)))
