@@ -56,7 +56,7 @@ investment_returns <- function()
 		),
 		dplyr::tibble(
 			Prudence=67,
-			Fund=" Cautious growth fund",
+			Fund="Cautious growth fund",
 			Year=2018:2067,
 			growth=rep(c(-0.015, 0.0145, 0.0054, 0.0044, 0.0044), each=10)
 		),
