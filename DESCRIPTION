@@ -5,7 +5,7 @@ Authors@R: c(
 	person("Gibran", "Hemani", email = "g.hemani@bristol.ac.uk", role = c("aut", "cre")),
 	person("Neil", "Davies", email = "neil.davies@bristol.ac.uk", role = c("aut")))
 Description: Calculate pensions under alternative schemes for USS
-Depends: R (>= 3.4.2), dplyr, lubridate
+Depends: R (>= 3.3.0), dplyr, lubridate
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

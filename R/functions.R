@@ -142,19 +142,43 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 #' @return Data frame of years and pension pots and annual benefits
 pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.1325, prudence, fund)
 {
+
+	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
+	if(length(ret) > length(income))
+	{
+		ret <- ret[1:length(income)]
+	} else if(length(ret) < length(income)) {
+		rem <- length(income) - length(ret)
+		ret <- c(ret, rep(ret[length(ret)], rem))
+	}
+
+	# True up to income of 55k. Afterwards add on DC
 	prop_salary <- 1/75
 	incr <- 1
 	mult <- 3
 	db_pension <- rep(0, length(income))
-	db_pension[1] <- income[1] * prop_salary
-	for(i in 2:length(income))
+	income_thresh <- pmin(income, 55000)
+	income_dc <- income - income_thresh
+	db_pension[1] <- income_thresh[1] * prop_salary
+	for(i in 2:length(income_thresh))
 	{
-		db_pension[i] <- db_pension[i-1] * incr + income[i] * prop_salary
+		db_pension[i] <- db_pension[i-1] * incr + income_thresh[i] * prop_salary
 	}
 	db_pot <- db_pension / annuity * 100000 + mult * db_pension
 
+	cont <- income_dc * employer_cont + income_dc * employee_cont
+	dc_pot_thresh <- rep(0, length(income_dc))
+	dc_pot_thresh[1] <- cont[1]
+	for(i in 2:length(income_dc))
+	{
+		dc_pot_thresh[i] <- dc_pot_thresh[i-1] * (1 + ret[i]) + cont[i]
+	}
+	dc_pension_thresh <- dc_pot_thresh / 100000 * annuity
 
-	prop_salary <- 1/53
+	db_pension <- db_pension + dc_pension_thresh
+	db_pot <- db_pot + dc_pot_thresh
+
+	prop_salary <- 1/57
 	incr <- 1.016
 	mult <- 0
 	tps_pension <- rep(0, length(income))
@@ -166,16 +190,8 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 	tps_pot <- tps_pension / annuity * 100000 + mult * tps_pension
 
 
-	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
-	if(length(ret) > length(income))
-	{
-		ret <- ret[1:length(income)]
-	} else if(length(ret) < length(income)) {
-		rem <- length(income) - length(ret)
-		ret <- c(ret, rep(ret[length(ret)], rem))
-	}
-
-	cont <- income * employer_cont + income * employee_cont
+	# cont <- income * employer_cont + income * employee_cont
+	cont <- income * 13.25 + income * employee_cont
 	dc_pot <- rep(0, length(income))
 	dc_pot[1] <- cont[1]
 	for(i in 2:length(income))
