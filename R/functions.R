@@ -191,7 +191,7 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 
 
 	# cont <- income * employer_cont + income * employee_cont
-	cont <- income * 13.25 + income * employee_cont
+	cont <- income * 0.1325 + income * employee_cont
 	dc_pot <- rep(0, length(income))
 	dc_pot[1] <- cont[1]
 	for(i in 2:length(income))
@@ -200,7 +200,7 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 	}
 	dc_pension <- dc_pot / 100000 * annuity
 
-	dat <- dplyr::tibble(year=1:length(income) + 2017, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension)
+	dat <- dplyr::tibble(year=1:length(income) + 2018, income=income, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension)
 	return(dat)
 }
 
@@ -215,7 +215,21 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 #' @return date object
 retirement_date <- function(dob)
 {
-	lubridate::ymd(dob) + lubridate::years(68)
+	dob <- lubridate::ymd(dob)
+	message(years(dob))
+	if(lubridate::year(dob) < 1954) {
+		message(65)
+		return(dob + lubridate::years(65))
+	} else if(lubridate::year(dob) < 1961) {
+		message(66)
+		return(dob + lubridate::years(66))
+	} else if(lubridate::year(dob) < 1977) {
+		message(67)
+		return(dob + lubridate::years(67))
+	} else {
+		message(68)
+		return(dob + lubridate::years(68))
+	}
 }
 
 #' Pension summary

@@ -12,17 +12,19 @@
 library(tidyverse)
 library(lubridate)
 
+library(devtools)
+load_all()
 
 annuity_rates(sex="women", type="joint", 50)
 income_projection(43600, 0.02, years=50, upper_limit=55000)
 
 
-benefits <- pension_calculation(
-	income=income_projection(43600, 0.02, years=50, upper_limit=55000), 
+pension_calculation(
+	income=income_projection(43600, 0.02, years=50, upper_limit=1000000), 
 	annuity=annuity_rates("men", "joint", 50),
 	employee_cont=0.08, 
-	employer_cont=0.1325, 
+	employer_cont=0.12, 
 	prudence = 67, 
 	fund = "USS"
-) %>% pension_summary("1984-09-06")
+) %>% as.data.frame() %>% pension_summary("1984-09-06")
 
