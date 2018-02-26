@@ -140,7 +140,7 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 #' 
 #' @export
 #' @return Data frame of years and pension pots and annual benefits
-pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.1325, prudence, fund)
+pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.12, prudence, fund)
 {
 
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
@@ -191,7 +191,7 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 
 
 	# cont <- income * employer_cont + income * employee_cont
-	cont <- income * 0.1325 + income * employee_cont
+	cont <- income * 0.1325 + income * 0.08
 	dc_pot <- rep(0, length(income))
 	dc_pot[1] <- cont[1]
 	for(i in 2:length(income))
