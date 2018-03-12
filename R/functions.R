@@ -149,14 +149,16 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 #' 
 #' @param income output from \code{income_projection}
 #' @param annuity output from \code{annuity_rates}
-#' @param employee_cont Percentage of salary contributed by employee. Default 0.08
-#' @param employer_cont Percentage of salary contributed by employer. Default 0.1325
+#' @param employee_cont Proportion of salary contributed by employee under DC scheme. Default 0.08
+#' @param employer_cont Proportion of salary contributed by employer under DC scheme. Default 0.12
 #' @param prudence Parameter for \code{investment_returns}, 50 or 65
 #' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @param prop_salary_recip For DB, the (reciprocal of the) annual accrual percentage.  Default: 75 (ie. 1/75th of below-threshold salary)
+#' @param income_thres For DB, one's salary above this threshold counts towards the DC scheme rather than DB.  Default: 55000
 #' 
 #' @export
 #' @return Data frame of years and pension pots and annual benefits
-pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.12, prudence, fund)
+pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.12, prudence, fund, prop_salary_recip=75, income_thres=55000)
 {
 
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
@@ -168,12 +170,12 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 		ret <- c(ret, rep(ret[length(ret)], rem))
 	}
 
-	# True up to income of 55k. Afterwards add on DC
-	prop_salary <- 1/75
+	# True up to income of 'income_thres'. Afterwards add on DC
+	prop_salary <- 1 / prop_salary_recip
 	incr <- 1
 	mult <- 3
 	db_pension <- rep(0, length(income))
-	income_thresh <- pmin(income, 55000)
+	income_thresh <- pmin(income, income_thres)
 	income_dc <- income - income_thresh
 	db_pension[1] <- income_thresh[1] * prop_salary
 	for(i in 2:length(income_thresh))
