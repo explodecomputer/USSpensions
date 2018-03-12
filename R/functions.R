@@ -216,7 +216,41 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 	}
 	dc_pension <- dc_pot / 100000 * annuity
 
-	dat <- dplyr::tibble(year=1:length(income) + 2018, income=income, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension)
+
+	############
+
+	# True up to income of 42k. Afterwards add on DC
+	prop_salary <- 1/85
+	incr <- 1
+	mult <- 3
+	db_pension2 <- rep(0, length(income))
+	income_thresh <- pmin(income, 42000)
+	income_dc <- income - income_thresh
+	db_pension2[1] <- income_thresh[1] * prop_salary
+	for(i in 2:length(income_thresh))
+	{
+		db_pension2[i] <- db_pension2[i-1] * incr + income_thresh[i] * prop_salary
+	}
+	db_pot2 <- db_pension2 / annuity * 100000 + mult * db_pension2
+
+	cont <- income_dc * employer_cont + income_dc * employee_cont
+	dc_pot_thresh <- rep(0, length(income_dc))
+	dc_pot_thresh[1] <- cont[1]
+	for(i in 2:length(income_dc))
+	{
+		dc_pot_thresh[i] <- dc_pot_thresh[i-1] * (1 + ret[i]) + cont[i]
+	}
+	dc_pension_thresh <- dc_pot_thresh / 100000 * annuity
+
+	db_pension2 <- db_pension2 + dc_pension_thresh
+	db_pot2 <- db_pot2 + dc_pot_thresh
+
+
+
+
+	##########
+
+	dat <- dplyr::tibble(year=1:length(income) + 2018, income=income, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension, db_pot2=db_pot2, db_pension2=db_pension2)
 	return(dat)
 }
 
