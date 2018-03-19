@@ -181,11 +181,11 @@ investment_savings_total <- function(savedPerYear,years,prudence,fund)
 #' @return Dollars needed to save per year. 
 percentage_savings_total <- function(savedPerYear,income,prudence,fund)
 {
-  
+
   ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
-  
-  
-  totalSavings = numeric(length(income))
+ 
+
+    totalSavings = numeric(length(income))
   totalSavings[1] <- savedPerYear*income[1]
   
   for(i in 2:length(income))
@@ -193,8 +193,10 @@ percentage_savings_total <- function(savedPerYear,income,prudence,fund)
     totalSavings[i] <- totalSavings[i-1] * (1 + ret[i]) + savedPerYear*income[i]
   }
   
+
   return(totalSavings[length(income)])
 }
+
 #' Cost function for constant amount
 #' 
 #' This function is the cost function used for determining how much is needed 
@@ -295,6 +297,7 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 {
 
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
+	
 	if(length(ret) > length(income))
 	{
 		ret <- ret[1:length(income)]
@@ -382,13 +385,27 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 
 
 
+	
+	
 
 	##########
 
 	dat <- dplyr::tibble(year=1:length(income) + 2018, income=income, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension, db_pot2=db_pot2, db_pension2=db_pension2)
+	dat$prudence = prudence
+	dat$fund = fund
 	return(dat)
 }
 
+
+####
+#Calculate how percentage of salary needed to match the DB benefits
+
+#' @export
+#' @return Data frame of years and pension pots and annual benefits
+required_savings_calculation <- function(income, prudence, fund, dob, db_pot, dc_pot, db_pot2,tps_pot)
+{
+}
+  
 
 #' Retirement date calculator
 #' 
@@ -428,5 +445,50 @@ retirement_date <- function(dob)
 #' @return relevant row from output of \code{pension_calculation}
 pension_summary <- function(benefits, dob)
 {
-	subset(benefits, year == lubridate::year(retirement_date(dob)))
+  print("calling summary")
+  retirementYearIdx <- which(benefits$year == lubridate::year(retirement_date(dob)))
+  incomeWorkingYears <- benefits$income[1:retirementYearIdx]
+
+
+	benefits <- subset(benefits, year == lubridate::year(retirement_date(dob)))
+  
+	#Calculate how much percentage of income would need to be saved to match
+	#the total pension values. 
+  #First for the DC only proposal
+  targetSavings <- benefits$db_pot - benefits$dc_pot
+  #targetSavings <- subset(targetSavings, year == lubridate::year(retirement_date(dob)))
+  
+
+  benefits$dc_salary_percent <-savings_required_percentage(targetSavings,incomeWorkingYears,
+                                                  prudence = benefits$prudence, 
+                                                  fund = benefits$fund)
+  
+  incomeNow <- incomeWorkingYears[1]
+  incomeFinal <- incomeWorkingYears[length(incomeWorkingYears)]
+  benefits$dc_salary_cut_now <- benefits$dc_salary_percent*incomeNow
+  benefits$dc_salary_cut_final <- benefits$dc_salary_percent*incomeFinal
+  
+#  dc_salary_percent <- rep(dc_salary_percent, length(db_pot))
+  # #Now for the march proposal
+  # 
+  targetSavings <- benefits$db_pot - benefits$db_pot2
+
+  benefits$dc_salary_percent2 <-savings_required_percentage(targetSavings,incomeWorkingYears,
+                                                            prudence = benefits$prudence, 
+                                                            fund = benefits$fund)
+  
+  benefits$dc_salary_cut_now2 <- benefits$dc_salary_percent2*incomeNow
+  benefits$dc_salary_cut_final2 <- benefits$dc_salary_percent2*incomeFinal
+  
+  # #Now for the TPS 
+  targetSavings <- benefits$tps_pot - benefits$db_pot2
+  benefits$tps_salary_percent <-savings_required_percentage(targetSavings,incomeWorkingYears,
+                                                    prudence = benefits$prudence, 
+                                                    fund = benefits$fund)
+
+  benefits$tps_salary_cut_now <- benefits$tps_salary_percent*incomeNow
+  benefits$tps_salary_cut_final <- benefits$tps_salary_percent*incomeFinal
+  
+  
+  return(benefits)
 }
