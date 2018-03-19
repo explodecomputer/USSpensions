@@ -445,7 +445,6 @@ retirement_date <- function(dob)
 #' @return relevant row from output of \code{pension_calculation}
 pension_summary <- function(benefits, dob)
 {
-  print("calling summary")
   retirementYearIdx <- which(benefits$year == lubridate::year(retirement_date(dob)))
   incomeWorkingYears <- benefits$income[1:retirementYearIdx]
 
