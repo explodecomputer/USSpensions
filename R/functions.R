@@ -101,6 +101,143 @@ income_projection <- function(start, increase, increases_per_year=1, years, uppe
 	c(start, pmin(start * (1 + increase)^(1:(years-1)), upper_limit))
 }
 
+#' Savings calculator
+#' 
+#' Given a total savings target calculalate how much per 
+#' year needed to achieve target savings total
+#'  
+#' @param amount Total savings target
+#' @param years Number of years to calculate
+#' @param prudence Parameter for \code{investment_returns}, 50 or 65
+#' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @export
+#' @return Dollars needed to save per year. 
+savings_required_constant <- function(amount,years,prudence,fund)
+{
+  
+#savings <- investment_savings_total(10000,years,prudence,fund)
+ #
+requiredSavingsPerYear = optimize(constantCostFunction,c(0, 2*amount/years),amount,years,prudence,fund)
+
+return(as.numeric(requiredSavingsPerYear[1]))
+}
+
+
+#' Savings calculator
+#' 
+#' Given a total savings target calculalate how much per 
+#' year needed to achieve target savings total
+#'  
+#' @param amount Total savings target
+#' @param income Projected income each year
+#' @param prudence Parameter for \code{investment_returns}, 50 or 65
+#' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @export
+#' @return Dollars needed to save per year. 
+savings_required_percentage <- function(amount,income,prudence,fund)
+{
+  
+  #savings <- investment_savings_total(10000,years,prudence,fund)
+  #
+  requiredSavingsPerYear = optimize(percentageCostFunction,c(0, 1),amount,income,prudence,fund)
+  
+  return(as.numeric(requiredSavingsPerYear[1]))
+}
+#' Savings calculator
+#' 
+#' Given constant amount saved per year calculate total saved at end of years 
+#'  
+#' @param savedPerYear Constant amount saved per year
+#' @param years Number of years to calculate
+#' @param prudence Parameter for \code{investment_returns}, 50 or 65
+#' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @export
+#' @return Dollars needed to save per year. 
+investment_savings_total <- function(savedPerYear,years,prudence,fund)
+{
+  
+  ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
+  
+
+  totalSavings = numeric(years)
+  totalSavings[1] <- savedPerYear
+  for(i in 2:years)
+  {
+    totalSavings[i] <- totalSavings[i-1] * (1 + ret[i]) + savedPerYear
+  }
+  
+  return(totalSavings[years])
+}
+
+#' Savings calculator
+#' 
+#' Given percent of salary saved per year calculate total saved at end of years 
+#'  
+#' @param savedPerYear Percentage saved per year
+#' @param income vector of projected income values for each year
+#' @param prudence Parameter for \code{investment_returns}, 50 or 65
+#' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @export
+#' @return Dollars needed to save per year. 
+percentage_savings_total <- function(savedPerYear,income,prudence,fund)
+{
+
+  ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
+ 
+
+    totalSavings = numeric(length(income))
+  totalSavings[1] <- savedPerYear*income[1]
+  
+  for(i in 2:length(income))
+  {
+    totalSavings[i] <- totalSavings[i-1] * (1 + ret[i]) + savedPerYear*income[i]
+  }
+  
+
+  return(totalSavings[length(income)])
+}
+
+#' Cost function for constant amount
+#' 
+#' This function is the cost function used for determining how much is needed 
+#' to be saved as a constant amount per year. 
+#'  
+#' @param savedPerYear Total savings target
+#' @param years Number of years to calculate
+#' @param prudence Parameter for \code{investment_returns}, 50 or 65
+#' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @export
+#' @return Dollars needed to save per year. 
+constantCostFunction <- function(savedPerYear,targetTotal,years,prudence,fund)
+{
+  totalSavings = investment_savings_total(savedPerYear,years,prudence,fund)
+  
+  targetError = sum((totalSavings-targetTotal)^2)
+  
+  return(targetError)
+}
+
+
+#' Cost function for percetage saved
+#' 
+#' This function is the cost function used for determining how much is needed 
+#' to be saved as a percentage of income each year. 
+#'  
+#' @param savedPerYear Percentage saved each year
+#' @param targetTotal  Target total savings amount
+#' @param income Income earned in each year
+#' @param prudence Parameter for \code{investment_returns}, 50 or 65
+#' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @export
+#' @return Dollars needed to save per year. 
+percentageCostFunction <- function(savedPerYear,targetTotal,income,prudence,fund)
+{
+  totalSavings = percentage_savings_total(savedPerYear,income,prudence,fund)
+  
+  targetError = sum((totalSavings-targetTotal)^2)
+  
+  return(targetError)
+}
 #' Calculate annuity rates
 #' 
 #' Different rates for sex, joint vs single, and expected annual life expectancy increase
@@ -160,6 +297,7 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 {
 
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
+	
 	if(length(ret) > length(income))
 	{
 		ret <- ret[1:length(income)]
@@ -247,13 +385,27 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 
 
 
+	
+	
 
 	##########
 
 	dat <- dplyr::tibble(year=1:length(income) + 2018, income=income, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension, db_pot2=db_pot2, db_pension2=db_pension2)
+	dat$prudence = prudence
+	dat$fund = fund
 	return(dat)
 }
 
+
+####
+#Calculate how percentage of salary needed to match the DB benefits
+
+#' @export
+#' @return Data frame of years and pension pots and annual benefits
+required_savings_calculation <- function(income, prudence, fund, dob, db_pot, dc_pot, db_pot2,tps_pot)
+{
+}
+  
 
 #' Retirement date calculator
 #' 
@@ -293,5 +445,49 @@ retirement_date <- function(dob)
 #' @return relevant row from output of \code{pension_calculation}
 pension_summary <- function(benefits, dob)
 {
-	subset(benefits, year == lubridate::year(retirement_date(dob)))
+  retirementYearIdx <- which(benefits$year == lubridate::year(retirement_date(dob)))
+  incomeWorkingYears <- benefits$income[1:retirementYearIdx]
+
+
+	benefits <- subset(benefits, year == lubridate::year(retirement_date(dob)))
+  
+	#Calculate how much percentage of income would need to be saved to match
+	#the total pension values. 
+  #First for the DC only proposal
+  targetSavings <- benefits$db_pot - benefits$dc_pot
+  #targetSavings <- subset(targetSavings, year == lubridate::year(retirement_date(dob)))
+  
+
+  benefits$dc_salary_percent <-savings_required_percentage(targetSavings,incomeWorkingYears,
+                                                  prudence = benefits$prudence, 
+                                                  fund = benefits$fund)
+  
+  incomeNow <- incomeWorkingYears[1]
+  incomeFinal <- incomeWorkingYears[length(incomeWorkingYears)]
+  benefits$dc_salary_cut_now <- benefits$dc_salary_percent*incomeNow
+  benefits$dc_salary_cut_final <- benefits$dc_salary_percent*incomeFinal
+  
+#  dc_salary_percent <- rep(dc_salary_percent, length(db_pot))
+  # #Now for the march proposal
+  # 
+  targetSavings <- benefits$db_pot - benefits$db_pot2
+
+  benefits$dc_salary_percent2 <-savings_required_percentage(targetSavings,incomeWorkingYears,
+                                                            prudence = benefits$prudence, 
+                                                            fund = benefits$fund)
+  
+  benefits$dc_salary_cut_now2 <- benefits$dc_salary_percent2*incomeNow
+  benefits$dc_salary_cut_final2 <- benefits$dc_salary_percent2*incomeFinal
+  
+  # #Now for the TPS 
+  targetSavings <- benefits$tps_pot - benefits$db_pot2
+  benefits$tps_salary_percent <-savings_required_percentage(targetSavings,incomeWorkingYears,
+                                                    prudence = benefits$prudence, 
+                                                    fund = benefits$fund)
+
+  benefits$tps_salary_cut_now <- benefits$tps_salary_percent*incomeNow
+  benefits$tps_salary_cut_final <- benefits$tps_salary_percent*incomeFinal
+  
+  
+  return(benefits)
 }
