@@ -16,7 +16,9 @@ pension_calculation(
 	income=income, 
 	annuity=annuity,
 	prudence = prudence, 
-	fund = fund
+	fund = fund,
+	employee_cont=0.08,
+	employer_cont=0.12
 ) %>% as.data.frame() %>% pension_summary("1984-09-06")
 
 
