@@ -280,46 +280,24 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 }
 
 
-calc_db <- function(ret, annuity, income, prop_salary, incr, mult)
-{
-	nyears <- length(income)
-	dat <- tibble(
-		ret = ret,
-		annuity = annuity,
-		income = income,
-		tps_pension = c(income[1] * prop_salary, rep(0, nyears-1))
-	)
-	for(i in 2:nyears)
-	{
-		dat$tps_pension[i] <- dat$tps_pension[i-1] * incr + dat$income[i] * prop_salary
-	}
-	dat$tps_pot <- dat$tps_pension / dat$annuity * 100000 + mult * dat$tps_pension
-	return(dat)
-}
-
-
-calc_dc <- function(ret, annuity, income, employee_cont, employer_cont)
-{
-	dat <- tibble(
-		ret = ret,
-		annuity = annuity,
-		income = income,
-		cont_employee = income * employee_cont,
-		cont_employer = income * employer_cont,
-		dc_pot = c(cont_employee[1] + cont_employer[1], rep(0, nyears-1))
-	)
-	for(i in 2:nyears)
-	{
-		dat$dc_pot[i] <- dat$dc_pot[i-1] * (1 + dat$ret[i]) + dat$cont_employer[i] + dat$cont_employee[i]
-	}
-	return(dat)
-}
-
-
+#' Calculate pension with combined DB and DC components
+#'
+#' @param ret Investment returns per year
+#' @param annuity output from \code{annuity_rates}
+#' @param income output from \code{income_projection}
+#' @param employee_cont Percentage of salary contributed by employee
+#' @param employer_cont Percentage of salary contributed by employer
+#' @param prop_salary Proportion of salary contributing to DB
+#' @param db_cutoff Salary cutoff from DB to DC
+#' @param incr DB Parameter
+#' @param mult DB Parameter
+#'
+#' @export
+#' @return Tibble
 calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_salary, db_cutoff, incr, mult)
 {
 	nyears <- length(income)
-	dat <- tibble(
+	dat <- dplyr::tibble(
 		ret = ret,
 		annuity = annuity,
 		income = income,
@@ -335,12 +313,14 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 	dat$db_pot <- dat$db_pension / annuity * 100000 + dat$db_pension * mult
 	dat$cont_employer <- dat$income_dc * employer_cont
 	dat$cont_employee <- dat$income_dc * employee_cont
-	dat$dc_pot_thresh <- 0
+	dat$dc_pot_thresh[1] <- dat$cont_employee[1] + dat$cont_employer[1]
 	for(i in 2:nyears)
 	{
 		dat$dc_pot_thresh[i] <- dat$dc_pot_thresh[i-1] * (1 + dat$ret[i]) + dat$cont_employer[i] + dat$cont_employee[i]
 	}
 	dat$dc_pension_thresh <- dat$dc_pot_thresh / 100000 * annuity
+	dat$total_pot <- dat$db_pot + dat$dc_pot_thresh
+	dat$total_pension <- dat$db_pension + dat$dc_pension_thresh
 	return(dat)
 }
 
@@ -351,14 +331,12 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 #' 
 #' @param income output from \code{income_projection}
 #' @param annuity output from \code{annuity_rates}
-#' @param employee_cont Percentage of salary contributed by employee. Default 0.08
-#' @param employer_cont Percentage of salary contributed by employer. Default 0.1325
 #' @param prudence Parameter for \code{investment_returns}, 50 or 65
 #' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
 #' 
 #' @export
 #' @return Data frame of years and pension pots and annual benefits
-pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.12, prudence, fund)
+pension_calculation <- function(income, annuity, prudence, fund)
 {
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
 	
@@ -370,77 +348,56 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 		ret <- c(ret, rep(ret[length(ret)], rem))
 	}
 
-	tps_2018 <- calc_db(ret, annuity, income, prop_salary = 1/57, incr = 1.016, mult = 0)
-	dc_2018 <- calc_dc(ret, annuity, income, employee_cont=0.08, employer_cont=0.1325)
-	db_orig <- calc_db_dc(ret, annuity, income, employee_cont = 0.08, employer_cont = 0.12, prop_salary = 1/75, db_cutoff = 55000, incr = 1, mult = 3)
+	tps_2018 <- calc_db_dc(ret, annuity, income, 
+		prop_salary = 1/57, 
+		incr = 1.016, 
+		mult = 0,
+		employee_cont = 0,
+		employer_cont = 0,
+		db_cutoff = Inf
+	)
 
-	db_2018 <- calc_db_dc(ret, annuity, income, employee_cont = 0.08, employer_cont = 0.12, prop_salary = 1/85, incr = 1, mult = 3, db_cutoff = 42000)
+	dc_2018 <- calc_db_dc(ret, annuity, income,
+		employee_cont=0.08,
+		employer_cont=0.1325,
+		db_cutoff=0,
+		prop_salary=0,
+		incr=0,
+		mult=0
+	)
 
-	db_2018a <- calc
+	db_orig <- calc_db_dc(ret, annuity, income, 
+		employee_cont = 0.08,
+		employer_cont = 0.12,
+		prop_salary = 1/75,
+		db_cutoff = 55000,
+		incr = 1,
+		mult = 3
+	)
 
-	# True up to income of 42k. Afterwards add on DC
-	prop_salary <- 1/85
-	incr <- 1
-	mult <- 3
-	db_pension2 <- rep(0, length(income))
-	income_thresh <- pmin(income, 42000)
-	income_dc <- income - income_thresh
-	db_pension2[1] <- income_thresh[1] * prop_salary
-	for(i in 2:length(income_thresh))
-	{
-		db_pension2[i] <- db_pension2[i-1] * incr + income_thresh[i] * prop_salary
-	}
-	db_pot2 <- db_pension2 / annuity * 100000 + mult * db_pension2
-
-	cont <- income_dc * employer_cont + income_dc * employee_cont
-	dc_pot_thresh <- rep(0, length(income_dc))
-	dc_pot_thresh[1] <- cont[1]
-	for(i in 2:length(income_dc))
-	{
-		dc_pot_thresh[i] <- dc_pot_thresh[i-1] * (1 + ret[i]) + cont[i]
-	}
-	dc_pension_thresh <- dc_pot_thresh / 100000 * annuity
-
-	db_pension2 <- db_pension2 + dc_pension_thresh
-	db_pot2 <- db_pot2 + dc_pot_thresh
-
-
-	#########
-	# new db - same as db_pot2 but with higher contributions
-
-	# True up to income of 42k. Afterwards add on DC
-	prop_salary <- 1/85
-	incr <- 1
-	mult <- 3
-	db_pension2 <- rep(0, length(income))
-	income_thresh <- pmin(income, 42000)
-	income_dc <- income - income_thresh
-	db_pension2[1] <- income_thresh[1] * prop_salary
-	for(i in 2:length(income_thresh))
-	{
-		db_pension2[i] <- db_pension2[i-1] * incr + income_thresh[i] * prop_salary
-	}
-	db_pot2 <- db_pension2 / annuity * 100000 + mult * db_pension2
-
-	cont <- income_dc * employer_cont + income_dc * employee_cont
-	dc_pot_thresh <- rep(0, length(income_dc))
-	dc_pot_thresh[1] <- cont[1]
-	for(i in 2:length(income_dc))
-	{
-		dc_pot_thresh[i] <- dc_pot_thresh[i-1] * (1 + ret[i]) + cont[i]
-	}
-	dc_pension_thresh <- dc_pot_thresh / 100000 * annuity
-
-	db_pension2 <- db_pension2 + dc_pension_thresh
-	db_pot2 <- db_pot2 + dc_pot_thresh
-
-
-	
-	
+	db_2018 <- calc_db_dc(ret, annuity, income,
+		employee_cont = 0.08,
+		employer_cont = 0.12,
+		prop_salary = 1/85,
+		incr = 1,
+		mult = 3,
+		db_cutoff = 42000
+	)
 
 	##########
 
-	dat <- dplyr::tibble(year=1:length(income) + 2018, income=income, db_pot=db_pot, db_pension=db_pension, dc_pot=dc_pot, dc_pension=dc_pension, tps_pot=tps_pot, tps_pension=tps_pension, db_pot2=db_pot2, db_pension2=db_pension2)
+	dat <- dplyr::tibble(
+		year=1:length(income) + today() %>% year(),
+		income=income, 
+		db_pot=db_orig$total_pot,
+		db_pension=db_orig$total_pension,
+		dc_pot=dc_2018$total_pot,
+		dc_pension=dc_2018$total_pension,
+		tps_pot=tps_2018$total_pot,
+		tps_pension=tps_2018$total_pension,
+		db_pot2=db_2018$total_pot,
+		db_pension2=db_2018$total_pension
+	)
 	dat$prudence = prudence
 	dat$fund = fund
 	return(dat)
@@ -459,8 +416,6 @@ required_savings_calculation <- function(income, prudence, fund, dob, db_pot, dc
 
 #' Retirement date calculator
 #' 
-#' Just adds 68 years. Needs to be made more accurate based on birth year
-#' 
 #' @param dob e.g. "06/09/1984" for 6 september 1984
 #' 
 #' @export
@@ -468,20 +423,26 @@ required_savings_calculation <- function(income, prudence, fund, dob, db_pot, dc
 retirement_date <- function(dob)
 {
 	dob <- lubridate::ymd(dob)
-	message(years(dob))
 	if(lubridate::year(dob) < 1954) {
-		message(65)
 		return(dob + lubridate::years(65))
 	} else if(lubridate::year(dob) < 1961) {
-		message(66)
 		return(dob + lubridate::years(66))
 	} else if(lubridate::year(dob) < 1977) {
-		message(67)
 		return(dob + lubridate::years(67))
 	} else {
-		message(68)
 		return(dob + lubridate::years(68))
 	}
+}
+
+#' Years of work left until retirement
+#'
+#' @param dob e.g. "06/09/1984" for 6 september 1984
+#'
+#' @export
+#' @return Numeric value
+years_left <- function(dob)
+{
+	{retirement_date(dob) %>% year()} - {today() %>% year()}
 }
 
 #' Pension summary

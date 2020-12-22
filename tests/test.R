@@ -1,30 +1,34 @@
-
-
-
-# Inputs
-
-# Date of birth
-# Single or joint annuity
-# Future path of income
-# Investment returns
-# Male or female
-
 library(tidyverse)
 library(lubridate)
 
 library(devtools)
 load_all()
 
-annuity_rates(sex="women", type="joint", 50)
-income_projection(43600, 0.02, years=50, upper_limit=55000)
+
+nyears <- years_left("1984/09/06")
+annuity <- annuity_rates(sex="women", type="joint", nyears)
+income <- income_projection(55750.00, 0.04, years=nyears, upper_limit=1000000)
+prudence = 67
+fund = "USS"
 
 
 pension_calculation(
-	income=income_projection(43600, 0.02, years=50, upper_limit=1000000), 
-	annuity=annuity_rates("men", "joint", 50),
-	employee_cont=0.08, 
-	employer_cont=0.12, 
-	prudence = 67, 
-	fund = "USS"
+	income=income, 
+	annuity=annuity,
+	prudence = prudence, 
+	fund = fund
 ) %>% as.data.frame() %>% pension_summary("1984-09-06")
+
+
+contributions_model(income) %>%
+group_by(model) %>%
+slice_tail(n=1) %>%
+select(model, employee_cumsum, employee_tax_cumsum) %>%
+pivot_longer(c(employee_tax_cumsum, employee_cumsum)) %>%
+ggplot(aes(y=value, x=model)) +
+geom_bar(stat="identity", aes(fill=name), position="dodge")
+
+ggplot(., aes())
+
+
 
