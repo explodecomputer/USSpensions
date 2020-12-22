@@ -118,7 +118,7 @@ calculate_contributions <- function(income, db_cutoff1=58589.7, inflation=0.02, 
 	contributions$employer_cumsum <- cumsum(contributions$employer)
 
 
-	tax_thresholds <- calc_tax_thresholds(income, inflation, nyears) %>% dplyr::mutate(
+	tax_thresholds <- calc_tax_thresholds(income, inflation) %>% dplyr::mutate(
 		employee_additional = case_when(
 			contributions$employee < above_additional ~ contributions$employee,
 			TRUE ~ above_additional

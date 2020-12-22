@@ -20,7 +20,13 @@ pension_calculation(
 ) %>% as.data.frame() %>% pension_summary("1984-09-06")
 
 
-contributions_model(income) %>%
+conts <- contributions_model(income)
+
+
+library(tidyr)
+library(ggplot2)
+
+conts %>%
 group_by(model) %>%
 slice_tail(n=1) %>%
 select(model, employee_cumsum, employee_tax_cumsum) %>%
