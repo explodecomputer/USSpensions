@@ -1,3 +1,11 @@
+#' Calculate cutoff
+#'
+#' @param income output from \code{income_projection}
+#' @param db_cutoff1 income cutoff year 1
+#' @param inflation inflation
+#'
+#' @export
+#' @return Tibble
 calc_db_cutoff <- function(income, db_cutoff1, inflation)
 {
 	nyears <- length(income)
@@ -12,6 +20,15 @@ calc_db_cutoff <- function(income, db_cutoff1, inflation)
 	)
 }
 
+#' Contribution rates
+#'
+#' <full description>
+#'
+#' @param nyears how many years to calculate
+#' @param contribution_model Default ="USS Trustee current plans"
+#'
+#' @export
+#' @return Tibble
 contribution_rates <- function(nyears, contribution_model="USS Trustee current plans")
 {
 	list(
@@ -43,8 +60,16 @@ contribution_rates <- function(nyears, contribution_model="USS Trustee current p
 }
 
 
-calc_tax_thresholds <- function(income, inflation, nyears)
+#' Tax thresholds
+#'
+#' @param income output from \code{income_projection}
+#' @param inflation inflation
+#'
+#' @export
+#' @return
+calc_tax_thresholds <- function(income, inflation)
 {
+	nyears <- length(income)
 	tax_thresholds <- dplyr::tibble(
 		year = 1:nyears,
 		lower = 12500 * (1 + inflation)^(0:(nyears-1)),
@@ -68,6 +93,18 @@ calc_tax_thresholds <- function(income, inflation, nyears)
 	)
 }
 
+#' Contributions
+#'
+#' @param income output from \code{income_projection}
+#' @param db_cutoff1 income cutoff year 1 default=58589.7
+#' @param inflation default=0.02
+#' @param contribution_model default="USS Trustee current plans"
+#' @param lower_rate default= 0.2
+#' @param higher_rate default =0.4 
+#' @param additional_rate default=0.45
+#'
+#' @export
+#' @return Tibble
 calculate_contributions <- function(income, db_cutoff1=58589.7, inflation=0.02, contribution_model="USS Trustee current plans", lower_rate = 0.2, higher_rate=0.4, additional_rate=0.45)
 {
 	nyears <- length(income)
@@ -101,6 +138,17 @@ calculate_contributions <- function(income, db_cutoff1=58589.7, inflation=0.02, 
 }
 
 
+#' Contributions over all models
+#'
+#' @param income output from \code{income_projection}
+#' @param db_cutoff1 income cutoff year 1 default=58589.7
+#' @param inflation default=0.02
+#' @param lower_rate default= 0.2
+#' @param higher_rate default =0.4 
+#' @param additional_rate default=0.45
+#'
+#' @export
+#' @return Tibble
 contributions_model <- function(income, db_cutoff1=58589.7, inflation=0.02, lower_rate = 0.2, higher_rate=0.4, additional_rate=0.45)
 {
 	contribution_models <- c("USS Trustee current plans", "USS Trustee minimum", "USS Trustee maximum", "No change")

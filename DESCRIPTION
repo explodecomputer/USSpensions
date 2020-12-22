@@ -9,6 +9,6 @@ Depends: R (>= 3.3.0), dplyr, lubridate
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.0.1
+RoxygenNote: 7.1.1
 Suggests: 
     testthat
