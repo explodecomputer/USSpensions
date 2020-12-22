@@ -333,10 +333,12 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 #' @param annuity output from \code{annuity_rates}
 #' @param prudence Parameter for \code{investment_returns}, 50 or 65
 #' @param fund Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"
+#' @param employee_cont Percentage of salary contributed by employee
+#' @param employer_cont Percentage of salary contributed by employer
 #' 
 #' @export
 #' @return Data frame of years and pension pots and annual benefits
-pension_calculation <- function(income, annuity, prudence, fund)
+pension_calculation <- function(income, annuity, prudence, fund, employer_cont=0.08, employee_cont=0.12)
 {
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
 	
@@ -367,8 +369,8 @@ pension_calculation <- function(income, annuity, prudence, fund)
 	)
 
 	db_orig <- calc_db_dc(ret, annuity, income, 
-		employee_cont = 0.08,
-		employer_cont = 0.12,
+		employee_cont = employee_cont,
+		employer_cont = employer_cont,
 		prop_salary = 1/75,
 		db_cutoff = 55000,
 		incr = 1,

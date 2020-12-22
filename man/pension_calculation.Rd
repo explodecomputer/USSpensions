@@ -4,7 +4,14 @@
 \alias{pension_calculation}
 \title{Calculate pensions for different schemes}
 \usage{
-pension_calculation(income, annuity, prudence, fund)
+pension_calculation(
+  income,
+  annuity,
+  prudence,
+  fund,
+  employer_cont = 0.08,
+  employee_cont = 0.12
+)
 }
 \arguments{
 \item{income}{output from \code{income_projection}}
@@ -14,6 +21,10 @@ pension_calculation(income, annuity, prudence, fund)
 \item{prudence}{Parameter for \code{investment_returns}, 50 or 65}
 
 \item{fund}{Parameter for \code{investment_returns}, "USS", "Growth fund", "Moderate growth fund", "Cautious growth fund", or "Cash fund"}
+
+\item{employer_cont}{Percentage of salary contributed by employer}
+
+\item{employee_cont}{Percentage of salary contributed by employee}
 }
 \value{
 Data frame of years and pension pots and annual benefits
