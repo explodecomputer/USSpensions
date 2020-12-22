@@ -280,6 +280,71 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 }
 
 
+calc_db <- function(ret, annuity, income, prop_salary, incr, mult)
+{
+	nyears <- length(income)
+	dat <- tibble(
+		ret = ret,
+		annuity = annuity,
+		income = income,
+		tps_pension = c(income[1] * prop_salary, rep(0, nyears-1))
+	)
+	for(i in 2:nyears)
+	{
+		dat$tps_pension[i] <- dat$tps_pension[i-1] * incr + dat$income[i] * prop_salary
+	}
+	dat$tps_pot <- dat$tps_pension / dat$annuity * 100000 + mult * dat$tps_pension
+	return(dat)
+}
+
+
+calc_dc <- function(ret, annuity, income, employee_cont, employer_cont)
+{
+	dat <- tibble(
+		ret = ret,
+		annuity = annuity,
+		income = income,
+		cont_employee = income * employee_cont,
+		cont_employer = income * employer_cont,
+		dc_pot = c(cont_employee[1] + cont_employer[1], rep(0, nyears-1))
+	)
+	for(i in 2:nyears)
+	{
+		dat$dc_pot[i] <- dat$dc_pot[i-1] * (1 + dat$ret[i]) + dat$cont_employer[i] + dat$cont_employee[i]
+	}
+	return(dat)
+}
+
+
+calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_salary, db_cutoff, incr, mult)
+{
+	nyears <- length(income)
+	dat <- tibble(
+		ret = ret,
+		annuity = annuity,
+		income = income,
+		income_thresh = pmin(income, db_cutoff),
+		income_dc = income - income_thresh,
+		db_pension = c(income_thresh[1] * prop_salary, rep(0, nyears-1)),
+		dc_pot_thresh = 0
+	)
+	for(i in 2:nyears)
+	{
+		dat$db_pension[i] <- dat$db_pension[i-1] * incr + dat$income_thresh[i] * prop_salary
+	}
+	dat$db_pot <- dat$db_pension / annuity * 100000 + dat$db_pension * mult
+	dat$cont_employer <- dat$income_dc * employer_cont
+	dat$cont_employee <- dat$income_dc * employee_cont
+	dat$dc_pot_thresh <- 0
+	for(i in 2:nyears)
+	{
+		dat$dc_pot_thresh[i] <- dat$dc_pot_thresh[i-1] * (1 + dat$ret[i]) + dat$cont_employer[i] + dat$cont_employee[i]
+	}
+	dat$dc_pension_thresh <- dat$dc_pot_thresh / 100000 * annuity
+	return(dat)
+}
+
+
 #' Calculate pensions for different schemes
 #' 
 #' Calculates total pot and annual benefits for DB, DC and TPS pensions
@@ -295,7 +360,6 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 #' @return Data frame of years and pension pots and annual benefits
 pension_calculation <- function(income, annuity, employee_cont=0.08, employer_cont=0.12, prudence, fund)
 {
-
 	ret <- subset(investment_returns(), Prudence==prudence & Fund==fund)$growth
 	
 	if(length(ret) > length(income))
@@ -306,56 +370,13 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 		ret <- c(ret, rep(ret[length(ret)], rem))
 	}
 
-	# True up to income of 55k. Afterwards add on DC
-	prop_salary <- 1/75
-	incr <- 1
-	mult <- 3
-	db_pension <- rep(0, length(income))
-	income_thresh <- pmin(income, 55000)
-	income_dc <- income - income_thresh
-	db_pension[1] <- income_thresh[1] * prop_salary
-	for(i in 2:length(income_thresh))
-	{
-		db_pension[i] <- db_pension[i-1] * incr + income_thresh[i] * prop_salary
-	}
-	db_pot <- db_pension / annuity * 100000 + mult * db_pension
+	tps_2018 <- calc_db(ret, annuity, income, prop_salary = 1/57, incr = 1.016, mult = 0)
+	dc_2018 <- calc_dc(ret, annuity, income, employee_cont=0.08, employer_cont=0.1325)
+	db_orig <- calc_db_dc(ret, annuity, income, employee_cont = 0.08, employer_cont = 0.12, prop_salary = 1/75, db_cutoff = 55000, incr = 1, mult = 3)
 
-	cont <- income_dc * employer_cont + income_dc * employee_cont
-	dc_pot_thresh <- rep(0, length(income_dc))
-	dc_pot_thresh[1] <- cont[1]
-	for(i in 2:length(income_dc))
-	{
-		dc_pot_thresh[i] <- dc_pot_thresh[i-1] * (1 + ret[i]) + cont[i]
-	}
-	dc_pension_thresh <- dc_pot_thresh / 100000 * annuity
+	db_2018 <- calc_db_dc(ret, annuity, income, employee_cont = 0.08, employer_cont = 0.12, prop_salary = 1/85, incr = 1, mult = 3, db_cutoff = 42000)
 
-	db_pension <- db_pension + dc_pension_thresh
-	db_pot <- db_pot + dc_pot_thresh
-
-	prop_salary <- 1/57
-	incr <- 1.016
-	mult <- 0
-	tps_pension <- rep(0, length(income))
-	tps_pension[1] <- income[1] * prop_salary
-	for(i in 2:length(income))
-	{
-		tps_pension[i] <- tps_pension[i-1] * incr + income[i] * prop_salary
-	}
-	tps_pot <- tps_pension / annuity * 100000 + mult * tps_pension
-
-
-	# cont <- income * employer_cont + income * employee_cont
-	cont <- income * 0.1325 + income * 0.08
-	dc_pot <- rep(0, length(income))
-	dc_pot[1] <- cont[1]
-	for(i in 2:length(income))
-	{
-		dc_pot[i] <- dc_pot[i-1] * (1 + ret[i]) + cont[i]
-	}
-	dc_pension <- dc_pot / 100000 * annuity
-
-
-	############
+	db_2018a <- calc
 
 	# True up to income of 42k. Afterwards add on DC
 	prop_salary <- 1/85
@@ -383,6 +404,35 @@ pension_calculation <- function(income, annuity, employee_cont=0.08, employer_co
 	db_pension2 <- db_pension2 + dc_pension_thresh
 	db_pot2 <- db_pot2 + dc_pot_thresh
 
+
+	#########
+	# new db - same as db_pot2 but with higher contributions
+
+	# True up to income of 42k. Afterwards add on DC
+	prop_salary <- 1/85
+	incr <- 1
+	mult <- 3
+	db_pension2 <- rep(0, length(income))
+	income_thresh <- pmin(income, 42000)
+	income_dc <- income - income_thresh
+	db_pension2[1] <- income_thresh[1] * prop_salary
+	for(i in 2:length(income_thresh))
+	{
+		db_pension2[i] <- db_pension2[i-1] * incr + income_thresh[i] * prop_salary
+	}
+	db_pot2 <- db_pension2 / annuity * 100000 + mult * db_pension2
+
+	cont <- income_dc * employer_cont + income_dc * employee_cont
+	dc_pot_thresh <- rep(0, length(income_dc))
+	dc_pot_thresh[1] <- cont[1]
+	for(i in 2:length(income_dc))
+	{
+		dc_pot_thresh[i] <- dc_pot_thresh[i-1] * (1 + ret[i]) + cont[i]
+	}
+	dc_pension_thresh <- dc_pot_thresh / 100000 * annuity
+
+	db_pension2 <- db_pension2 + dc_pension_thresh
+	db_pot2 <- db_pot2 + dc_pot_thresh
 
 
 	
