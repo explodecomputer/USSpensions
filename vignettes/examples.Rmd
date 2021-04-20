@@ -1,0 +1,91 @@
+---
+title: "examples"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{examples}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+# library(USSpensions)
+library(devtools)
+load_all()
+```
+
+## 2020 model
+
+```{r}
+pension_calculation(
+	income=income_projection(
+		start=50000, 
+		increase=0.02,
+		increases_per_year=1,
+		years=years_left("1984/09/06"),
+		upper_limit=1000000
+	), 
+	annuity=annuity_rates(
+		sex="men", 
+		type="single", 
+		years=years_left("1984/09/06"),
+		le_increase=0.015
+	),
+	employee_cont=0.0765, 
+	employer_cont=0.12, 
+	prudence = 67, 
+	fund = "USS"
+) %>%
+	pension_summary("1984/09/06") %>%
+	str()
+```
+
+Contributions model
+
+```{r}
+
+income_projection(
+	start=50000, 
+	increase=0.02,
+	increases_per_year=1,
+	years=years_left("1984/09/06"),
+	upper_limit=1000000
+) %>%
+	contributions_model()
+```
+
+
+## 2020 valuation model
+
+Based on 2018 model but
+
+- update annuities
+- update investments
+- different scenarios
+
+
+```{r}
+annuity <- annuity_rates("women", "joint", years_left("1996/05/01"), 0.005)
+income <- income_projection(32000, 0.02, increases_per_year=1, years_left("1996/05/01"), upper_limit=1000000)
+years <- 1:length(income) + today() %>% year()
+
+calc_db_dc(
+	subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
+	annuity,
+	income,
+	employee_cont = 0.08,
+	employer_cont = 0.12,
+	prop_salary = 1/75,
+	db_cutoff =  59883.65,
+	incr = 1,
+	mult = 3
+) %>% as.data.frame()
+
+pension <- pension_calculation_2020(income, annuity, "Scenario 1")
+```
