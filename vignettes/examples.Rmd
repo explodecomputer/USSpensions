@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 # library(USSpensions)
+library(tidyverse)
 library(devtools)
 load_all()
 ```
@@ -88,4 +89,9 @@ calc_db_dc(
 ) %>% as.data.frame()
 
 pension <- pension_calculation_2020(income, annuity, "Scenario 1")
+
+pension_calculation_2020_summary(pension)
+
+plot_pension(pension)
+
 ```

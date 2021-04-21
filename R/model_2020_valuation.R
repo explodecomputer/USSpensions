@@ -179,6 +179,11 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 
 	##########
 
+	out <- lapply(out, function(x)
+	{
+		x %>% mutate(years=years)
+	})
+
 	return(out)
 }
 
@@ -195,7 +200,32 @@ pension_calculation_2020_summary <- function(pension)
 	{
 		pension[[x]] %>% 
 			dplyr::slice_tail(n=1) %>%
-			dplyr::select(total_pot, total_pension) %>%
+			dplyr::select(year=years, total_pot, total_pension) %>%
 			dplyr::mutate(scenario=x)
 	}) %>% bind_rows()
+}
+
+
+#' Plot pension
+#'
+#' @param pension Output from pension_calculation_2020()
+#' @param column Defailt="total_pot"
+#'
+#' @export
+#' @return plot
+plot_pension <- function(pension, years, column="total_pot")
+{
+	lapply(names(pension), function(x)
+	{
+		tibble(
+			value=pension[[x]][[column]],
+			scenario=x,
+			year=pension[[x]][["years"]]
+		)
+	}) %>% 
+		bind_rows() %>%
+		ggplot(., aes(x=year, y=value)) +
+		geom_line(aes(colour=scenario)) +
+		scale_colour_brewer(type="qual") +
+		labs(y=column)
 }
