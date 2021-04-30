@@ -12,3 +12,5 @@ Steps
 Theoretically we could use Bank of England forecasts of expected future inflation. But I think the SD of this will be way too low. So I won't consider it further. 
 
 Potentially will add an option to allow people to set their own inflation assumptions.
+
+A change

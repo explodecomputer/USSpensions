@@ -398,7 +398,9 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 #' @return Tibble
 calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_salary, db_cutoff, incr, infl_assump, mult)
 { 
+
 	nyears <- length(income)
+
 	dat <- dplyr::tibble(
 		ret = ret,
 		annuity = annuity,
@@ -406,9 +408,10 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 		income_thresh = pmin(income, db_cutoff),
 		income_dc = income - income_thresh,
 		db_pension = c(income_thresh[1] * prop_salary, rep(0, nyears-1)),
-		dc_pot_thresh = 0
-		incr=subset(incr, c($infl_assump))
+		dc_pot_thresh = 0,
+		incr = incr
 	)
+}
 	for(i in 2:nyears)
 	{
 		dat$db_pension[i] <- dat$db_pension[i-1] * dat$incr[i] + dat$income_thresh[i] * prop_salary
