@@ -13,6 +13,7 @@ calc_db_dc(
   prop_salary,
   db_cutoff,
   incr,
+  infl_assump,
   mult
 )
 }
@@ -31,7 +32,9 @@ calc_db_dc(
 
 \item{db_cutoff}{Salary cutoff from DB to DC}
 
-\item{incr}{DB Parameter}
+\item{incr}{DB Parameter \code{inflation_incr}}
+
+\item{infl_assump}{DB revaluing inflation assumption \code{inflation_incr}}
 
 \item{mult}{DB Parameter}
 }

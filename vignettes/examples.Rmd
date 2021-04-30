@@ -21,7 +21,7 @@ library(devtools)
 load_all()
 ```
 
-## 2020 model
+## 2020 contributions model
 
 ```{r}
 pension_calculation(
@@ -88,8 +88,41 @@ calc_db_dc(
 	mult = 3
 ) %>% as.data.frame()
 
-pension <- pension_calculation_2020(income, annuity, "Scenario 1")
 
+calc_db_dc(
+	subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
+	annuity,
+	income,
+	employee_cont = 0.08,
+	employer_cont = 0.12,
+	prop_salary = 1/75,
+	db_cutoff =  59883.65,
+	incr = "incr_2.5",
+	mult = 3
+) %>% as.data.frame()
+
+
+calc_db_dc(
+	subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
+	annuity,
+	income,
+	employee_cont = 0.08,
+	employer_cont = 0.12,
+	prop_salary = 1/75,
+	db_cutoff =  59883.65,
+	incr = "incr_sim_post96_5",
+	mult = 3
+) %>% as.data.frame()
+
+pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr=1)
+pension_calculation_2020_summary(pension)
+pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr="incr_2.5")
+pension_calculation_2020_summary(pension)
+pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr="incr_5")
+pension_calculation_2020_summary(pension)
+pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr="incr_sim_post96_5")
+pension_calculation_2020_summary(pension)
+pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr="incr_sim_post96_2.5")
 pension_calculation_2020_summary(pension)
 
 plot_pension(pension)

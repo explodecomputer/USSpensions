@@ -4,7 +4,7 @@
 \alias{plot_pension}
 \title{Plot pension}
 \usage{
-plot_pension(pension, column = "total_pot")
+plot_pension(pension, years, column = "total_pot")
 }
 \arguments{
 \item{pension}{Output from pension_calculation_2020()}

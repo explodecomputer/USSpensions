@@ -97,10 +97,11 @@ annuity_rates <- function(sex, type, years, le_increase=0.005)
 #' @param income Output from income_projection()
 #' @param annuity Output from annuity_rates()
 #' @param scenario Investment scenario for the DC component of the current scheme ("Scenario 1", "Scenario 2a", "Scenario 2b", "Scenario 3a", "Scenario 3b")
+#' @param incr Either a column name from inflation_data, or a numeric value
 #'
 #' @export
 #' @return List of data frames for each scenario
-pension_calculation_2020 <- function(income, annuity, scenario)
+pension_calculation_2020 <- function(income, annuity, scenario, incr=1)
 {
 	years <- 1:length(income) + today() %>% year()
 
@@ -113,7 +114,7 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 		db_cutoff = 0,
 		employee_cont = 0.096,
 		employer_cont = 0.018,
-		incr = 1,
+		incr = incr,
 		mult = 3
 	)
 
@@ -125,7 +126,7 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 		employee_cont = 0.12,
 		employer_cont = 0,
 		db_cutoff = 40000,
-		incr = 1,
+		incr = incr,
 		mult = 3
 	)
 
@@ -137,7 +138,7 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 		employee_cont = 0.12,
 		employer_cont = 0,
 		db_cutoff = 30000,
-		incr = 1,
+		incr = incr,
 		mult = 3
 	)
 
@@ -149,7 +150,7 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 		employee_cont = 0.16,
 		employer_cont = 0,
 		db_cutoff = 40000,
-		incr = 1,
+		incr = incr,
 		mult = 3
 	)
 
@@ -161,7 +162,7 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 		employee_cont = 0.16,
 		employer_cont = 0,
 		db_cutoff = 30000,
-		incr = 1,
+		incr = incr,
 		mult = 3
 	)
 
@@ -173,7 +174,7 @@ pension_calculation_2020 <- function(income, annuity, scenario)
 		employer_cont = 0.12,
 		prop_salary = 1/75,
 		db_cutoff =  59883.65,
-		incr = 1,
+		incr = incr,
 		mult = 3
 	)
 
