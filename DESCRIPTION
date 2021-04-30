@@ -1,6 +1,6 @@
 Package: USSpensions
 Title: Calculate pensions under alternative schemes for USS
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
 	person("Gibran", "Hemani", email = "g.hemani@bristol.ac.uk", role = c("aut", "cre")),
 	person("Neil", "Davies", email = "neil.davies@bristol.ac.uk", role = c("aut")))
