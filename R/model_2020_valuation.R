@@ -106,65 +106,65 @@ pension_calculation_2020 <- function(income, annuity, scenario, incr=1)
 	years <- 1:length(income) + today() %>% year()
 
 	out <- list()
-	# out$scenario_1 <- calc_db_dc(
-	# 	subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
-	# 	annuity,
-	# 	income,
-	# 	prop_salary=0,
-	# 	db_cutoff = 0,
-	# 	employee_cont = 0.096,
-	# 	employer_cont = 0.018,
-	# 	incr = incr,
-	# 	mult = 3
-	# )
+	out$scenario_1 <- calc_db_dc(
+		subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
+		annuity,
+		income,
+		prop_salary=0,
+		db_cutoff = 0,
+		employee_cont = 0.096,
+		employer_cont = 0.018,
+		incr = incr,
+		mult = 3
+	)
 
-	# out$scenario_2a <- calc_db_dc(
-	# 	subset(investment_returns_2020(years), Scenario=="Scenario 2a")$growth,
-	# 	annuity,
-	# 	income,
-	# 	prop_salary = 1/170,
-	# 	employee_cont = 0.12,
-	# 	employer_cont = 0,
-	# 	db_cutoff = 40000,
-	# 	incr = incr,
-	# 	mult = 3
-	# )
+	out$scenario_2a <- calc_db_dc(
+		subset(investment_returns_2020(years), Scenario=="Scenario 2a")$growth,
+		annuity,
+		income,
+		prop_salary = 1/170,
+		employee_cont = 0.12,
+		employer_cont = 0,
+		db_cutoff = 40000,
+		incr = incr,
+		mult = 3
+	)
 
-	# out$scenario_2b <- calc_db_dc(
-	# 	subset(investment_returns_2020(years), Scenario=="Scenario 2b")$growth,
-	# 	annuity,
-	# 	income,
-	# 	prop_salary = 1/165,
-	# 	employee_cont = 0.12,
-	# 	employer_cont = 0,
-	# 	db_cutoff = 30000,
-	# 	incr = incr,
-	# 	mult = 3
-	# )
+	out$scenario_2b <- calc_db_dc(
+		subset(investment_returns_2020(years), Scenario=="Scenario 2b")$growth,
+		annuity,
+		income,
+		prop_salary = 1/165,
+		employee_cont = 0.12,
+		employer_cont = 0,
+		db_cutoff = 30000,
+		incr = incr,
+		mult = 3
+	)
 
-	# out$scenario_3a <- calc_db_dc(
-	# 	subset(investment_returns_2020(years), Scenario=="Scenario 3a")$growth,
-	# 	annuity,
-	# 	income,
-	# 	prop_salary = 1/115,
-	# 	employee_cont = 0.16,
-	# 	employer_cont = 0,
-	# 	db_cutoff = 40000,
-	# 	incr = incr,
-	# 	mult = 3
-	# )
+	out$scenario_3a <- calc_db_dc(
+		subset(investment_returns_2020(years), Scenario=="Scenario 3a")$growth,
+		annuity,
+		income,
+		prop_salary = 1/115,
+		employee_cont = 0.16,
+		employer_cont = 0,
+		db_cutoff = 40000,
+		incr = incr,
+		mult = 3
+	)
 
-	# out$scenario_3b <- calc_db_dc(
-	# 	subset(investment_returns_2020(years), Scenario=="Scenario 3b")$growth,
-	# 	annuity,
-	# 	income,
-	# 	prop_salary = 1/110,
-	# 	employee_cont = 0.16,
-	# 	employer_cont = 0,
-	# 	db_cutoff = 30000,
-	# 	incr = incr,
-	# 	mult = 3
-	# )
+	out$scenario_3b <- calc_db_dc(
+		subset(investment_returns_2020(years), Scenario=="Scenario 3b")$growth,
+		annuity,
+		income,
+		prop_salary = 1/110,
+		employee_cont = 0.16,
+		employer_cont = 0,
+		db_cutoff = 30000,
+		incr = incr,
+		mult = 3
+	)
 
 	out$current <- calc_db_dc(
 		subset(investment_returns_2020(years), Scenario==scenario)$growth,
