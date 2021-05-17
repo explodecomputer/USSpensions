@@ -174,7 +174,7 @@ pension_calculation_2020 <- function(income, annuity, scenario, incr=1)
 		employer_cont = 0.12,
 		prop_salary = 1/75,
 		db_cutoff =  59883.65,
-		incr = incr,
+		incr = "incr_5",
 		mult = 3
 	)
 
