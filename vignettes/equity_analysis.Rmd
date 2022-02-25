@@ -1,0 +1,143 @@
+---
+title: "Equity in USS changes"
+output: html_notebook
+---
+
+```{r, message=FALSE, echo=FALSE, warning=FALSE}
+library(USSpensions)
+library(tidyverse)
+library(readxl)
+```
+
+The UUK proposal reduces the accrual rate, the salary threshold and the maximum increase in inflation protection. This affects staff differently in two ways
+
+1. Based on how much pension has already been accrued
+2. Based on the variable impact due to varying years left in the scheme and salaries
+
+Hypothesis: BAME members are at higher frequency amongst younger colleagues, and therefore will have accrued less pension at a higher rate, and are more adversely affected overall than by white colleagues.
+
+Analysis
+
+1. Obtain breakdown of number of BAME and white colleagues by grade
+2. Obtain age distributions and salary distributions for each grade (currently guestimated)
+3. Determine the pension reduction from current scheme to UUK proposal for each grade
+4. Estimate the fraction of the total pot under the current scheme that each grade has accrued
+5. Estimate the fraction of the total pot reduced by UUK proposal for each grade
+6. Cross reference numbers of BAME/white colleagues by grade to get overall reduction in total pot for BAME vs white colleagues
+
+
+Get the BAME / White numbers by grade for Bristol Medical School
+
+```{r, message=FALSE}
+o <- lapply(2:10, function(i)
+{
+	a <- read_xlsx("uob_intersectional.xlsx", sheet=i, skip=1)
+	b <- read_xlsx("uob_intersectional.xlsx", sheet=i) %>% names() %>% {.[1]}
+	a$position <- b
+	a$`BAME frac` <- a$BAME / (a$BAME + a$White)
+	a <- pivot_longer(a, starts_with(c("BAME", "White")))
+	return(a)
+}) %>% bind_rows()
+```
+
+Assume ages and salaries for each grade
+
+```{r}
+ages <- tribble(
+	~position, ~age, ~salary,
+	"Professor", 55, 90000,
+	"Associate Professor", 50, 64000,
+	"Senior Lecturer", 45, 56000,
+	"Senior Research Fellow", 45, 56000,
+	"Research Fellow", 40, 47000,
+	"Lecturer", 35, 40000, 
+	"Senior Research Associate", 35, 41000,
+	"Research Associate", 30, 36000
+)
+ages$to_retirement <- 68 - ages$age
+ages$accrued <- ages$age - 27
+ages$frac_affected <- ages$to_retirement / (ages$to_retirement + ages$accrued)
+```
+
+```{r}
+o %>% 
+  filter(name %in% c("BAME frac"), Year == "2019/20") %>% 
+  inner_join(., ages) %>%
+  ggplot(., aes(x=frac_affected, y=value)) +
+    geom_point(aes(colour=Year)) +
+    geom_smooth(aes(colour=Year), method="lm") +
+    labs(x="Fraction of working life remaining", y="Fraction BAME")
+```
+
+Summary: BAME colleagues have had less time to accrue at a higher rate, and are 
+
+What fraction of pension is accrued by age?
+Choose the youngest possible age, calculate the cumulative percentage of the final pot for each year
+
+```{r}
+annuity <- annuity_rates("women", "joint", years_left("1996/05/01"), 0.005)
+income <- income_projection(32000, 0.02, increases_per_year=1, years_left("1996/05/01"), upper_limit=1000000)
+pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr="incr_2.5")
+```
+
+
+
+```{r}
+ages <- pension$uuk1 %>%
+  mutate(
+    cumperc = total_pot / max(total_pot),
+    age=years-1996) %>%
+  select(age, cumperc) %>%
+  inner_join(ages, .)
+```
+
+```{r}
+ages <- ages %>%
+	group_by(position) %>%
+	do({
+		x <- .
+		annuity <- annuity_rates("men", "joint", x$to_retirement)
+		income <- income_projection(x$salary, 0.02, increases_per_year=1, x$to_retirement, upper_limit=1000000)
+		pension <- pension_calculation_2020(income, annuity, "Scenario 1", incr="incr_2.5") %>% pension_calculation_2020_summary()
+		x$current <- subset(pension, scenario == "current")$total_pot
+		x$uuk1 <- subset(pension, scenario == "uuk1")$total_pot
+		x$future_reduction <- 1 - x$uuk1 / x$current
+		x$total_reduction <- x$frac_affected * x$reduction
+		x
+	})
+```
+
+
+If the future accrual is reduced by ~1/3, for each member of staff ask what fraction of their total accrual is reduced by ~1/3, i.e. what fraction of total accrual is reduced by 1/3
+
+
+```{r}
+summary_bame <- o %>% filter(name %in% c("BAME", "White"), Year == "2019/20") %>%
+	inner_join(., ages, by="position") %>%
+	group_by(name, Year) %>% 
+	summarise(mean_reduction=sum(total_reduction * value) / sum(value))
+summary_bame
+```
+
+How much is pension pot reducing for BAME colleagues compared to white colleagues
+
+```{r}
+1 - subset(summary_bame, name=="White")$mean_reduction / subset(summary_bame, name=="BAME")$mean_reduction
+```
+
+How much is pension pot reducing by grade
+
+```{r}
+summary_grade <- o %>% filter(name %in% c("BAME", "White"), Year == "2019/20") %>%
+	inner_join(., ages, by="position") %>%
+	group_by(position, Year) %>% 
+	summarise(mean_reduction=sum(total_reduction * value) / sum(value)) %>%
+  arrange(mean_reduction)
+summary_grade
+```
+
+```{r}
+subset(summary_grade, position=="Research Associate")$mean_reduction/subset(summary_grade, position=="Professor")$mean_reduction
+```
+
+
