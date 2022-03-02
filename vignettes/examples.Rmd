@@ -50,7 +50,6 @@ pension_calculation(
 Contributions model
 
 ```{r}
-
 income_projection(
 	start=50000, 
 	increase=0.02,
@@ -127,4 +126,12 @@ pension_calculation_2020_summary(pension)
 
 plot_pension(pension)
 
+```
+
+
+Pension with a change 
+
+
+```{r}
+pension_calculation_2020
 ```

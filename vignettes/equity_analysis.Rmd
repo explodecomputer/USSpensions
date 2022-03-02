@@ -122,7 +122,7 @@ summary_bame
 How much is pension pot reducing for BAME colleagues compared to white colleagues
 
 ```{r}
-1 - subset(summary_bame, name=="White")$mean_reduction / subset(summary_bame, name=="BAME")$mean_reduction
+subset(summary_bame, name=="BAME")$mean_reduction / subset(summary_bame, name=="White")$mean_reduction
 ```
 
 How much is pension pot reducing by grade

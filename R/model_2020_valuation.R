@@ -90,6 +90,84 @@ annuity_rates <- function(sex, type, years, le_increase=0.005)
 }
 
 
+scenarios <- function(years, current_scenario, incr)
+{
+	list(
+		`Scenario 1` = list(
+			ret=subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
+			prop_salary=0,
+			employee_cont = 0.096,
+			employer_cont = 0.018,
+			db_cutoff = 0,
+			incr=incr,
+			mult = 3
+		),
+		`Scenario 2a` = list(
+			ret=subset(investment_returns_2020(years), Scenario=="Scenario 2a")$growth,
+			prop_salary = 1/170,
+			employee_cont = 0.12,
+			employer_cont = 0,
+			db_cutoff = 40000,
+			incr=incr,
+			mult = 3
+		),
+		`Scenario 2b` = list(
+			ret=subset(investment_returns_2020(years), Scenario=="Scenario 2b")$growth,
+			prop_salary = 1/165,
+			employee_cont = 0.12,
+			employer_cont = 0,
+			db_cutoff = 30000,
+			incr=incr,
+			mult = 3
+		),
+		`Scenario 3a` = list(
+			ret=subset(investment_returns_2020(years), Scenario=="Scenario 3a")$growth,
+			prop_salary = 1/115,
+			employee_cont = 0.16,
+			employer_cont = 0,
+			db_cutoff = 40000,
+			incr=incr,
+			mult = 3
+		),
+		`Scenario 3b` = list(
+			ret=subset(investment_returns_2020(years), Scenario=="Scenario 3b")$growth,
+			prop_salary = 1/110,
+			employee_cont = 0.16,
+			employer_cont = 0,
+			db_cutoff = 30000,
+			incr=incr,
+			mult = 3
+		),
+		`Current` = list(
+			ret=subset(investment_returns_2020(years), Scenario==current_scenario)$growth,
+			employee_cont = 0.08,
+			employer_cont = 0.12,
+			prop_salary = 1/75,
+			db_cutoff =  59883.65,
+			incr = "incr_5",
+			mult = 3
+		),
+		`UUK1` = list(
+			ret=rep(0.004, length(years)),
+			employee_cont = 0.096,
+			employer_cont = 0.104,
+			prop_salary = 1/85,
+			db_cutoff =  40000,
+			incr = incr,
+			mult = 3
+		),
+		`UUK2` = list(
+			ret=rep(0.004, length(years)),
+			employee_cont = 0.096,
+			employer_cont = 0.104,
+			prop_salary = 1/75,
+			db_cutoff =  30000,
+			incr = incr,
+			mult = 3
+		)
+	)
+}
+
 
 #' Pension scenarios 2020
 #'
@@ -105,112 +183,26 @@ pension_calculation_2020 <- function(income, annuity, scenario, incr=1)
 {
 	years <- 1:length(income) + today() %>% year()
 
-	out <- list()
-	out$scenario_1 <- calc_db_dc(
-		subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
-		annuity,
-		income,
-		prop_salary=0,
-		db_cutoff = 0,
-		employee_cont = 0.096,
-		employer_cont = 0.018,
-		incr = incr,
-		mult = 3
-	)
-
-	out$scenario_2a <- calc_db_dc(
-		subset(investment_returns_2020(years), Scenario=="Scenario 2a")$growth,
-		annuity,
-		income,
-		prop_salary = 1/170,
-		employee_cont = 0.12,
-		employer_cont = 0,
-		db_cutoff = 40000,
-		incr = incr,
-		mult = 3
-	)
-
-	out$scenario_2b <- calc_db_dc(
-		subset(investment_returns_2020(years), Scenario=="Scenario 2b")$growth,
-		annuity,
-		income,
-		prop_salary = 1/165,
-		employee_cont = 0.12,
-		employer_cont = 0,
-		db_cutoff = 30000,
-		incr = incr,
-		mult = 3
-	)
-
-	out$scenario_3a <- calc_db_dc(
-		subset(investment_returns_2020(years), Scenario=="Scenario 3a")$growth,
-		annuity,
-		income,
-		prop_salary = 1/115,
-		employee_cont = 0.16,
-		employer_cont = 0,
-		db_cutoff = 40000,
-		incr = incr,
-		mult = 3
-	)
-
-	out$scenario_3b <- calc_db_dc(
-		subset(investment_returns_2020(years), Scenario=="Scenario 3b")$growth,
-		annuity,
-		income,
-		prop_salary = 1/110,
-		employee_cont = 0.16,
-		employer_cont = 0,
-		db_cutoff = 30000,
-		incr = incr,
-		mult = 3
-	)
-
-	out$current <- calc_db_dc(
-		subset(investment_returns_2020(years), Scenario==scenario)$growth,
-		annuity,
-		income,
-		employee_cont = 0.08,
-		employer_cont = 0.12,
-		prop_salary = 1/75,
-		db_cutoff =  59883.65,
-		incr = "incr_5",
-		mult = 3
-	)
-
-	out$uuk1 <- calc_db_dc(
-		rep(0.004, length(years)),
-		annuity,
-		income,
-		employee_cont = 0.096,
-		employer_cont = 0.104,
-		prop_salary = 1/85,
-		db_cutoff =  40000,
-		incr = incr,
-		mult = 3
-	)
-
-	out$uuk2 <- calc_db_dc(
-		rep(0.004, length(years)),
-		annuity,
-		income,
-		employee_cont = 0.096,
-		employer_cont = 0.104,
-		prop_salary = 1/75,
-		db_cutoff =  30000,
-		incr = incr,
-		mult = 3
-	)
-
-
-	##########
-
-	out <- lapply(out, function(x)
+	sc <- scenarios(years, scenario, incr)
+	out <- lapply(sc, function(s)
 	{
-		x %>% mutate(years=years)
+		s$annuity <- annuity
+		s$income <- income
+		do.call(calc_db_dc, s) %>%
+			mutate(years = years)
 	})
+	names(out) <- names(sc)
 
 	return(out)
+}
+
+
+pension_calculation_2020_changes <- function(income, annuity, scenario1, scenario2, year_change, incr)
+{
+	years <- 1:length(income) + today() %>% year()
+	sc <- scenarios(years, scenario, incr)
+
+
 }
 
 
@@ -239,7 +231,7 @@ pension_calculation_2020_summary <- function(pension)
 #'
 #' @export
 #' @return plot
-plot_pension <- function(pension, years, column="total_pot")
+plot_pension <- function(pension, column="total_pot")
 {
 	lapply(names(pension), function(x)
 	{

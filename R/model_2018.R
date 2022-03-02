@@ -296,7 +296,7 @@ annuity_rates <- function(sex, type, years, le_increase=0.015)
 #'
 #' @export
 #' @return Tibble
-calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_salary, db_cutoff, incr, infl_assump, mult)
+calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_salary, db_cutoff, incr, infl_assump, mult, dato=NULL)
 { 
 
 	nyears <- length(income)
@@ -321,7 +321,17 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 		incr = incr
 	)
 
-	for(i in 2:nyears)
+	if(!is.null(dato))
+	{
+		ind <- c(1:nyears)[-c(1:nrow(dato))]
+		dat <- rbind(dato, dat[ind,])
+		start <- nrow(dato)+1
+	} else {
+		ind <- c(1:nyears)
+		start <- 2
+	}
+
+	for(i in start:nyears)
 	{
 		dat$db_pension[i] <- dat$db_pension[i-1] * dat$incr[i] + dat$income_thresh[i] * prop_salary
 	}
@@ -336,7 +346,7 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 	dat$dc_pension_thresh <- dat$dc_pot_thresh / 100000 * annuity
 	dat$total_pot <- dat$db_pot + dat$dc_pot_thresh
 	dat$total_pension <- dat$db_pension + dat$dc_pension_thresh
-	return(dat)
+	return(dat[ind,])
 }
 
 
