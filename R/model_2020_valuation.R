@@ -93,7 +93,7 @@ annuity_rates <- function(sex, type, years, le_increase=0.005)
 scenarios <- function(years, current_scenario, incr)
 {
 	list(
-		`Scenario 1` = list(
+		scenario_1 = list(
 			ret=subset(investment_returns_2020(years), Scenario=="Scenario 1")$growth,
 			prop_salary=0,
 			employee_cont = 0.096,
@@ -102,7 +102,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr=incr,
 			mult = 3
 		),
-		`Scenario 2a` = list(
+		scenario_2a = list(
 			ret=subset(investment_returns_2020(years), Scenario=="Scenario 2a")$growth,
 			prop_salary = 1/170,
 			employee_cont = 0.12,
@@ -111,7 +111,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr=incr,
 			mult = 3
 		),
-		`Scenario 2b` = list(
+		scenario_2b = list(
 			ret=subset(investment_returns_2020(years), Scenario=="Scenario 2b")$growth,
 			prop_salary = 1/165,
 			employee_cont = 0.12,
@@ -120,7 +120,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr=incr,
 			mult = 3
 		),
-		`Scenario 3a` = list(
+		scenario_3a = list(
 			ret=subset(investment_returns_2020(years), Scenario=="Scenario 3a")$growth,
 			prop_salary = 1/115,
 			employee_cont = 0.16,
@@ -129,7 +129,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr=incr,
 			mult = 3
 		),
-		`Scenario 3b` = list(
+		scenario_3b = list(
 			ret=subset(investment_returns_2020(years), Scenario=="Scenario 3b")$growth,
 			prop_salary = 1/110,
 			employee_cont = 0.16,
@@ -138,7 +138,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr=incr,
 			mult = 3
 		),
-		`Current` = list(
+		`current` = list(
 			ret=subset(investment_returns_2020(years), Scenario==current_scenario)$growth,
 			employee_cont = 0.08,
 			employer_cont = 0.12,
