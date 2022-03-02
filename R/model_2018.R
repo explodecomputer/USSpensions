@@ -324,7 +324,7 @@ calc_db_dc <- function(ret, annuity, income, employee_cont, employer_cont, prop_
 	if(!is.null(dato))
 	{
 		ind <- c(1:nyears)[-c(1:nrow(dato))]
-		dat <- rbind(dato, dat[ind,])
+		dat <- bind_rows(dato, dat[ind,])
 		start <- nrow(dato)+1
 	} else {
 		ind <- c(1:nyears)

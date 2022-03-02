@@ -133,5 +133,11 @@ Pension with a change
 
 
 ```{r}
-pension_calculation_2020
+annuity <- annuity_rates("women", "joint", years_left("1996/05/01"), 0.005)
+income <- income_projection(32000, 0.02, increases_per_year=1, years_left("1996/05/01"), upper_limit=1000000)
+years <- 1:length(income) + today() %>% year()
+pension_calculation_2020_changes(income, annuity, "Scenario 1", "UUK1", year_change=2063, incr="incr_2.5") %>%
+	plot_pension_change(.)
+
+
 ```

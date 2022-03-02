@@ -147,7 +147,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr = "incr_5",
 			mult = 3
 		),
-		`UUK1` = list(
+		`uuk1` = list(
 			ret=rep(0.004, length(years)),
 			employee_cont = 0.096,
 			employer_cont = 0.104,
@@ -156,7 +156,7 @@ scenarios <- function(years, current_scenario, incr)
 			incr = incr,
 			mult = 3
 		),
-		`UUK2` = list(
+		`uuk2` = list(
 			ret=rep(0.004, length(years)),
 			employee_cont = 0.096,
 			employer_cont = 0.104,
@@ -200,9 +200,21 @@ pension_calculation_2020 <- function(income, annuity, scenario, incr=1)
 pension_calculation_2020_changes <- function(income, annuity, scenario1, scenario2, year_change, incr)
 {
 	years <- 1:length(income) + today() %>% year()
-	sc <- scenarios(years, scenario, incr)
-
-
+	sc <- scenarios(years, scenario1, incr)
+	sc$Current$annuity <- annuity
+	sc$Current$income <- income
+	dat1 <- do.call(calc_db_dc, sc$Current)
+	l <- sc[[scenario2]]
+	l$annuity <- annuity
+	l$income <- income
+	l$dato <- dat1[1:which(years==year_change),]
+	dat2 <- do.call(calc_db_dc, l)
+	dat1$scenario <- "Current"
+	dat1$years <- years
+	dat2$scenario <- scenario2
+	dat2$years <- c((year_change+1):max(years))
+	dat <- bind_rows(dat1, dat2)
+	return(dat)
 }
 
 
@@ -235,15 +247,36 @@ plot_pension <- function(pension, column="total_pot")
 {
 	lapply(names(pension), function(x)
 	{
-		tibble(
+		dplyr::tibble(
 			value=pension[[x]][[column]],
 			scenario=x,
 			year=pension[[x]][["years"]]
 		)
 	}) %>% 
-		bind_rows() %>%
-		ggplot(., aes(x=year, y=value)) +
-		geom_line(aes(colour=scenario)) +
-		scale_colour_brewer(type="qual") +
-		labs(y=column)
+		dplyr::bind_rows() %>%
+		ggplot2::ggplot(., ggplot2::aes(x=year, y=value)) +
+		ggplot2::geom_line(ggplot2::aes(colour=scenario)) +
+		ggplot2::scale_colour_brewer(type="qual") +
+		ggplot2::labs(y=column)
+}
+
+
+#' Plot pension
+#'
+#' @param pension Output from pension_calculation_2020()
+#' @param column Defailt="total_pot"
+#'
+#' @export
+#' @return plot
+plot_pension_change <- function(dat, column="total_pot")
+{
+	dplyr::tibble(
+		value=dat[[column]],
+		scenario=dat[["scenario"]],
+		year=dat[["years"]]
+	) %>%
+		ggplot2::ggplot(., ggplot2::aes(x=year, y=value)) +
+		ggplot2::geom_line(ggplot2::aes(colour=scenario)) +
+		ggplot2::scale_colour_brewer(type="qual") +
+		ggplot2::labs(y=column)
 }
